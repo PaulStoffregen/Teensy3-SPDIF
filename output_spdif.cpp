@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-#include "output_SPDIF.h"
+#include "output_spdif.h"
 #include <arm_math.h>
 audio_block_t * AudioOutputSPDIF::block_left_1st = NULL;
 audio_block_t * AudioOutputSPDIF::block_right_1st = NULL;
@@ -38,7 +38,7 @@ DMAChannel AudioOutputSPDIF::dma(false);
 static const
 uint16_t bmclookup[256] = { //biphase mark encoded values for 0x00..0xff
 	0xcccc, 0x4ccc, 0x2ccc, 0xaccc, 0x34cc, 0xb4cc, 0xd4cc, 0x54cc,
-    0x32cc, 0xb2cc, 0xd2cc, 0x52cc, 0xcacc, 0x4acc, 0x2acc, 0xaacc,
+	0x32cc, 0xb2cc, 0xd2cc, 0x52cc, 0xcacc, 0x4acc, 0x2acc, 0xaacc,
 	0x334c, 0xb34c, 0xd34c, 0x534c, 0xcb4c, 0x4b4c, 0x2b4c, 0xab4c,
 	0xcd4c, 0x4d4c, 0x2d4c, 0xad4c, 0x354c, 0xb54c, 0xd54c, 0x554c,
 	0x332c, 0xb32c, 0xd32c, 0x532c, 0xcb2c, 0x4b2c, 0x2b2c, 0xab2c,
@@ -78,7 +78,7 @@ uint16_t bmclookup[256] = { //biphase mark encoded values for 0x00..0xff
 void AudioOutputSPDIF::begin(void)
 {
 	//perhaps it is faster to use 32-bit output ? -> less dma transfers on the bus
-	
+
 	dma.begin(true); // Allocate the DMA channel first
 
 	block_left_1st = NULL;
@@ -127,18 +127,18 @@ static uint16_t frame = 0;
 	hi  = bmclookup[(uint8_t)(lc >> 8)];
 	lo  = bmclookup[(uint8_t) lc];
 	lo ^= (~((int16_t)hi) >> 16);
-	
+
 	*(dest+1) = ((uint32_t)lo << 16) | hi;
-	
+
 	aux = (0xB333 ^ (((uint32_t)((int16_t)lo)) >> 17));
 	if ( frame == 0 ) {
 		*(dest+0) = 0xcc000000 | (PREAMBLE_B << 16 ) | aux;
 	} else {
 		*(dest+0) = 0xcc000000 | (PREAMBLE_M << 16 ) | aux;
 	}
-	
+
 	frame++;
-	if (frame > 191) frame = 0;	
+	if (frame > 191) frame = 0;
 }
 
 inline
@@ -149,9 +149,9 @@ void AudioOutputSPDIF::encodeR(int32_t *dest, uint16_t rc)
 	lo  = bmclookup[(uint8_t)rc];
 	lo ^= (~((int16_t)hi) >> 16);
 	*(dest+1) = ( ((uint32_t)lo << 16) | hi );
-	
+
 	aux = (0xB333 ^ (((uint32_t)((int16_t)lo)) >> 17));
-    *(dest+0)  =  0xcc000000 | (PREAMBLE_W << 16 ) | aux;		
+	*(dest+0)  =  0xcc000000 | (PREAMBLE_W << 16 ) | aux;
 }
 
 
@@ -159,7 +159,7 @@ void AudioOutputSPDIF::isr(void)
 {
 
 	const int16_t *src;
-	int32_t *end, *dest;	
+	int32_t *end, *dest;
 	audio_block_t *block;
 	uint32_t saddr, offset;
 
@@ -177,7 +177,7 @@ void AudioOutputSPDIF::isr(void)
 		dest = (int32_t *)SPDIF_tx_buffer;
 		end = (int32_t *)&SPDIF_tx_buffer[AUDIO_BLOCK_SAMPLES * 4/2];
 	}
-	
+
 
 	block = AudioOutputSPDIF::block_left_1st;
 	if (block) {
@@ -196,7 +196,7 @@ void AudioOutputSPDIF::isr(void)
 			AudioOutputSPDIF::block_left_1st = AudioOutputSPDIF::block_left_2nd;
 			AudioOutputSPDIF::block_left_2nd = NULL;
 		}
-	} else {		
+	} else {
 		do {
 			encodeL(dest, 0);
 			dest +=4;
@@ -209,12 +209,12 @@ void AudioOutputSPDIF::isr(void)
 	if (block) {
 		offset = AudioOutputSPDIF::block_right_offset;
 		src = &block->data[offset];
-		
+
 		do {
 			encodeR(dest, *src++);
 			dest += 4;
 		} while (dest < end);
-		
+
 		offset += AUDIO_BLOCK_SAMPLES/2;
 		if (offset < AUDIO_BLOCK_SAMPLES) {
 			AudioOutputSPDIF::block_right_offset = offset;
@@ -228,7 +228,7 @@ void AudioOutputSPDIF::isr(void)
 		do {
 			encodeR(dest, 0);
 			//*dest 	= 0xcce4ccccUL;
-			//*(dest+1) = 0xccccccccUL;				
+			//*(dest+1) = 0xccccccccUL;
 			dest += 4 ;
 		} while (dest < end);
 	}
@@ -317,27 +317,27 @@ void AudioOutputSPDIF::config_SPDIF(void)
 	SIM_SCGC6 |= SIM_SCGC6_I2S;
 	SIM_SCGC7 |= SIM_SCGC7_DMA;
 	SIM_SCGC6 |= SIM_SCGC6_DMAMUX;
-	
+
 	// enable MCLK output
 	I2S0_MCR = I2S_MCR_MICS(MCLK_SRC) | I2S_MCR_MOE;
 	I2S0_MDR = I2S_MDR_FRACT((MCLK_MULT-1)) | I2S_MDR_DIVIDE((MCLK_DIV-1));
 
 	// configure transmitter
 	I2S0_TMR = 0;
-	I2S0_TCR1 = I2S_TCR1_TFW(1);  // watermark 
+	I2S0_TCR1 = I2S_TCR1_TFW(1);  // watermark
 	I2S0_TCR2 = I2S_TCR2_SYNC(0) | I2S_TCR2_MSEL(1) | I2S_TCR2_BCD | I2S_TCR2_DIV(1);//I2S_TCR2_DIV(1)= 22khz, I2S_TCR2_DIV(0)= 44khz
 	I2S0_TCR3 = I2S_TCR3_TCE;
 
 	//4 Words per Frame 32 Bit Word-Length -> 128 Bit Frame-Length, MSB First:
 	I2S0_TCR4 = I2S_TCR4_FRSZ(3) | I2S_TCR4_SYWD(0) | I2S_TCR4_MF | I2S_TCR4_FSP | I2S_TCR4_FSD;
 	I2S0_TCR5 = I2S_TCR5_WNW(31) | I2S_TCR5_W0W(31) | I2S_TCR5_FBT(31);
-	
+
 	I2S0_RCSR = 0;
-	
+
 #if 1
-	// configure pin mux for 3 clock signals	
+	// configure pin mux for 3 clock signals
 	CORE_PIN23_CONFIG = PORT_PCR_MUX(6); // pin 23, PTC2, I2S0_TX_FS (LRCLK)
-	CORE_PIN9_CONFIG  = PORT_PCR_MUX(6); // pin  9, PTC3, I2S0_TX_BCLK	
+	CORE_PIN9_CONFIG  = PORT_PCR_MUX(6); // pin  9, PTC3, I2S0_TX_BCLK
 //	CORE_PIN11_CONFIG = PORT_PCR_MUX(6); // pin 11, PTC6, I2S0_MCLK
-#endif	
+#endif
 }
