@@ -325,7 +325,8 @@ void AudioOutputSPDIF::config_SPDIF(void)
 	// configure transmitter
 	I2S0_TMR = 0;
 	I2S0_TCR1 = I2S_TCR1_TFW(1);  // watermark
-	I2S0_TCR2 = I2S_TCR2_SYNC(0) | I2S_TCR2_MSEL(1) | I2S_TCR2_BCD | I2S_TCR2_DIV(1);//I2S_TCR2_DIV(1)= 22khz, I2S_TCR2_DIV(0)= 44khz
+	//I2S0_TCR2 = I2S_TCR2_SYNC(0) | I2S_TCR2_MSEL(1) | I2S_TCR2_BCD | I2S_TCR2_DIV(1);// 22khz
+	I2S0_TCR2 = I2S_TCR2_SYNC(0) | I2S_TCR2_MSEL(1) | I2S_TCR2_BCD | I2S_TCR2_DIV(0);// 44khz
 	I2S0_TCR3 = I2S_TCR3_TCE;
 
 	//4 Words per Frame 32 Bit Word-Length -> 128 Bit Frame-Length, MSB First:
